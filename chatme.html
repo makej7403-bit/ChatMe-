@@ -1,247 +1,117 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>ChatMe — AI Bot by Akin S. Sokpah</title>
-  <meta name="description" content="ChatMe — conversational AI assistant created by Akin S. Sokpah. Deploy to Vercel, set OPENAI_API_KEY in env."/>
+  <meta charset="UTF-8" />
+  <title>ChatMe AI — By Akin S. Sokpah</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+
   <style>
-    :root{
-      --bg:#f5f9ff; --card:#ffffff; --accent:#0b76ff; --muted:#6b7280;
-      --ai:#eef6ff;
+    body {
+      background: #f5f7fa;
+      font-family: Arial, sans-serif;
+      margin: 0;
+      padding: 0;
+      display: flex;
+      flex-direction: column;
+      height: 100vh;
     }
-    body{background:var(--bg);font-family:Inter,system-ui,Segoe UI,Roboto,Arial;color:#0f172a;margin:0;padding:18px}
-    .wrap{max-width:900px;margin:18px auto}
-    header{display:flex;align-items:center;gap:14px}
-    h1{margin:0;font-size:20px}
-    .muted{color:var(--muted);font-size:13px}
-    .card{background:var(--card);border-radius:12px;padding:16px;box-shadow:0 6px 22px rgba(11,22,45,0.06);margin-top:12px}
-    #chat{height:420px;overflow:auto;padding:12px;border-radius:10px;background:linear-gradient(180deg,#fbfdff, #f6fbff);border:1px solid #e8f1ff}
-    .msg{margin:12px 0;display:flex;gap:10px;align-items:flex-start}
-    .me{justify-content:flex-end}
-    .bubble{padding:10px 12px;border-radius:12px;max-width:78%}
-    .bubble.user{background:#0b76ff;color:white;border-bottom-right-radius:4px}
-    .bubble.ai{background:var(--ai);color:#07243b;border-bottom-left-radius:4px}
-    form{display:flex;gap:8px;margin-top:12px}
-    input[type=text]{flex:1;padding:10px;border-radius:10px;border:1px solid #e6edf3}
-    button{background:var(--accent);color:white;padding:10px 12px;border-radius:10px;border:0;cursor:pointer}
-    .footer{display:flex;gap:12px;align-items:center;margin-top:10px}
-    .small{font-size:13px;color:var(--muted)}
-    pre.code{background:#0b1220;color:#dbeafe;padding:12px;border-radius:8px;overflow:auto;max-height:260px}
-    .warn{background:#fff7ed;border-left:4px solid #ffb020;padding:8px;border-radius:8px;margin-top:12px}
-    .meta{font-size:13px;color:#0b2b44}
+    header {
+      background: #0a84ff;
+      color: white;
+      padding: 15px;
+      text-align: center;
+      font-size: 22px;
+      font-weight: bold;
+    }
+    #chatbox {
+      flex: 1;
+      padding: 20px;
+      overflow-y: auto;
+    }
+    .msg {
+      padding: 12px;
+      margin: 8px 0;
+      border-radius: 8px;
+      max-width: 80%;
+    }
+    .user {
+      background: #0a84ff;
+      color: white;
+      margin-left: auto;
+    }
+    .ai {
+      background: white;
+      color: black;
+      border: 1px solid #ddd;
+    }
+    #input-area {
+      display: flex;
+      padding: 15px;
+      background: white;
+      border-top: 1px solid #ccc;
+    }
+    #message {
+      flex: 1;
+      padding: 12px;
+      border: 1px solid #bbb;
+      border-radius: 6px;
+      font-size: 16px;
+    }
+    button {
+      padding: 12px 18px;
+      background: #0a84ff;
+      border: none;
+      border-radius: 6px;
+      color: white;
+      font-size: 16px;
+      margin-left: 8px;
+      cursor: pointer;
+    }
   </style>
 </head>
 <body>
-  <div class="wrap">
-    <header>
-      <div>
-        <h1>ChatMe</h1>
-        <div class="muted">AI Chat assistant — created by <strong>Akin S. Sokpah</strong></div>
-      </div>
-      <div style="margin-left:auto;text-align:right" class="muted small">Deploy: Vercel • Secure: env OPENAI_API_KEY</div>
-    </header>
 
-    <div class="card">
-      <div class="muted small">Instructions (quick):</div>
-      <ol class="small">
-        <li>Do NOT put your OpenAI API key into client HTML.</li>
-        <li>Deploy this file as frontend (or use it to preview locally), then create the serverless API route on Vercel (see code below) and set environment variable <code>OPENAI_API_KEY</code> in Vercel project settings.</li>
-        <li>The frontend calls <code>/api/openai</code> which proxies requests to OpenAI securely.</li>
-      </ol>
+<header>ChatMe AI — Created by Akin S. Sokpah</header>
 
-      <div class="warn">
-        <strong>Security note:</strong> Exposing the OpenAI API key in browser/client is unsafe and will allow others to use your quota and charge you. Use the serverless proxy code below.
-      </div>
+<div id="chatbox"></div>
 
-      <div class="card" style="margin-top:12px">
-        <div id="chat" aria-live="polite"></div>
+<div id="input-area">
+  <input id="message" placeholder="Ask ChatMe anything..." />
+  <button onclick="sendMessage()">Send</button>
+</div>
 
-        <form id="chatForm" onsubmit="return sendMessage()">
-          <input id="message" type="text" placeholder="Ask ChatMe anything — e.g. 'How can I get a scholarship?'"/>
-          <button type="submit">Send</button>
-        </form>
+<script>
+async function sendMessage() {
+  const input = document.getElementById("message");
+  const text = input.value.trim();
+  if (!text) return;
 
-        <div class="footer">
-          <div class="small">Model: <strong>gpt-4o-mini</strong> (server-side). Creator: Akin S. Sokpah.</div>
-          <div style="margin-left:auto" class="small meta">ChatMe v1 • Single-file frontend</div>
-        </div>
-      </div>
-    </div>
-
-    <div class="card">
-      <h3>Serverless proxy code (copy to Vercel as <code>/api/openai.js</code>)</h3>
-      <div class="muted small">Create a serverless function in your Vercel project (file path: <code>/api/openai.js</code> or <code>/pages/api/openai.js</code> for Next.js). Set <code>OPENAI_API_KEY</code> in Vercel env vars.</div>
-
-      <pre class="code"><code>// Node (Vercel Serverless / Next.js API) - save as /api/openai.js
-import fetch from 'node-fetch';
-
-export default async function handler(req, res) {
-  if (req.method !== 'POST') return res.status(405).json({ error: 'Method Not Allowed' });
+  showMessage(text, "user");
+  input.value = "";
 
   try {
-    const { messages, prompt } = req.body;
-    // Accept either chat messages array (for full chat) or a single prompt string.
-    let userContent = '';
-    if (messages && Array.isArray(messages)) {
-      // messages should be [{role:'user'|'assistant'|'system', content:'...'}, ...]
-      userContent = messages.map(m => m.content).join('\\n');
-    } else if (prompt) {
-      userContent = prompt;
-    } else {
-      return res.status(400).json({ error: 'Missing prompt or messages' });
-    }
-
-    const OPENAI_API_KEY = process.env.OPENAI_API_KEY;
-    if (!OPENAI_API_KEY) return res.status(500).json({ error: 'Server misconfigured: OPENAI_API_KEY not set' });
-
-    const resp = await fetch('https://api.openai.com/v1/chat/completions', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${OPENAI_API_KEY}`
-      },
-      body: JSON.stringify({
-        model: 'gpt-4o-mini',
-        messages: [{ role: 'user', content: userContent }],
-        max_tokens: 800
-      })
+    const res = await fetch("/api/openai", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ message: text })
     });
 
-    const data = await resp.json();
-
-    if (data.error) return res.status(500).json({ error: data.error });
-
-    // normalize and return text to client
-    const text = (data.choices && data.choices.map(c => c.message?.content || '').join('\\n')) || JSON.stringify(data);
-    return res.status(200).json({ text });
-  } catch (err) {
-    console.error('OpenAI proxy error', err);
-    return res.status(500).json({ error: 'OpenAI request failed' });
+    const data = await res.json();
+    showMessage(data.reply, "ai");
+  } catch (e) {
+    showMessage("Error contacting AI server.", "ai");
   }
 }
-</code></pre>
 
-      <div class="muted small" style="margin-top:8px">If you're using Next.js save the file as <code>pages/api/openai.js</code>. For plain Vercel Serverless, use <code>api/openai.js</code>.</div>
-    </div>
-
-    <div class="card">
-      <h3>Optional: Basic Next.js API route (if your project is Next.js)</h3>
-      <pre class="code"><code>// pages/api/openai.js (Next.js)
-import fetch from 'node-fetch';
-export default async function handler(req,res){
-  if(req.method!=='POST') return res.status(405).end();
-  const { prompt } = req.body;
-  if(!prompt) return res.status(400).json({error:'Missing prompt'});
-  const OPENAI_API_KEY = process.env.OPENAI_API_KEY;
-  const r = await fetch('https://api.openai.com/v1/chat/completions', {
-    method:'POST',
-    headers:{'Content-Type':'application/json','Authorization':`Bearer ${OPENAI_API_KEY}`},
-    body: JSON.stringify({ model:'gpt-4o-mini', messages:[{role:'user',content:prompt}], max_tokens:800 })
-  });
-  const data = await r.json();
-  let text = '';
-  if(data?.choices) text = data.choices.map(c=>c.message?.content||'').join('\\n');
-  else if(data?.error) return res.status(500).json({error:data.error});
-  else text = JSON.stringify(data);
-  return res.json({ text });
+function showMessage(text, type) {
+  const box = document.getElementById("chatbox");
+  const div = document.createElement("div");
+  div.className = `msg ${type}`;
+  div.textContent = text;
+  box.appendChild(div);
+  box.scrollTop = box.scrollHeight;
 }
-</code></pre>
+</script>
 
-      <div class="muted small">After you add the API file on Vercel, set <code>OPENAI_API_KEY</code> in the Vercel project settings > Environment Variables and redeploy.</div>
-    </div>
-
-    <div class="card">
-      <h3>Frontend → Server interaction (already wired)</h3>
-      <div class="muted small">The HTML below already calls <code>/api/openai</code>. You only need to add the serverless file and env var.</div>
-      <pre class="code"><code>// Example request sent from this page (we call it below in page script)
-POST /api/openai
-Content-Type: application/json
-
-{ "prompt": "Hello ChatMe, introduce yourself." }
-</code></pre>
-    </div>
-
-    <div class="card">
-      <h3>Full page script (Chat UI & logic)</h3>
-      <div class="muted small">This script is included below and is active on this page — it handles rendering, history, streaming, errors.</div>
-      <pre class="code"><code>// (script included in this file; shown here for reference)
-</code></pre>
-    </div>
-
-    <div class="card" style="margin-top:14px">
-      <div class="muted small">Now — the actual interactive script that powers the chat (runs in this page):</div>
-      <!-- The active client script -->
-      <script>
-        // Simple ChatMe frontend logic (stateless chat)
-        const chatElem = document.getElementById('chat');
-        const form = document.getElementById('chatForm');
-        const input = document.getElementById('message');
-
-        // initial system message
-        const meta = { name: 'ChatMe', author: 'Akin S. Sokpah' };
-
-        function appendMessage(role, text) {
-          const wrapper = document.createElement('div');
-          wrapper.className = 'msg ' + (role === 'user' ? 'me' : '');
-          const bubble = document.createElement('div');
-          bubble.className = 'bubble ' + (role === 'user' ? 'user' : 'ai');
-          bubble.innerText = text;
-          wrapper.appendChild(bubble);
-          chatElem.appendChild(wrapper);
-          chatElem.scrollTop = chatElem.scrollHeight;
-        }
-
-        async function sendMessage() {
-          const value = input.value.trim();
-          if (!value) return false;
-          appendMessage('user', value);
-          input.value = '';
-          appendMessage('ai', '...thinking');
-
-          try {
-            const r = await fetch('/api/openai', {
-              method: 'POST',
-              headers: {'Content-Type': 'application/json'},
-              body: JSON.stringify({ prompt: value })
-            });
-
-            const j = await r.json();
-            // replace last AI placeholder with response
-            // find last .msg with ai bubble and replace text
-            const ais = chatElem.querySelectorAll('.msg .bubble.ai');
-            if (ais.length) {
-              const last = ais[ais.length - 1];
-              if (j.text) last.innerText = j.text;
-              else if (j.error) last.innerText = 'Error: ' + (j.error.message || j.error);
-              else last.innerText = 'No reply';
-            } else {
-              // fallback
-              appendMessage('ai', j.text || JSON.stringify(j));
-            }
-          } catch (err) {
-            console.error(err);
-            const ais = chatElem.querySelectorAll('.msg .bubble.ai');
-            if (ais.length) ais[ais.length - 1].innerText = 'Network error (see console)';
-          }
-          return false;
-        }
-
-        // small welcome
-        appendMessage('ai', `Hello — I'm ChatMe, an AI assistant created by ${meta.author}. Ask me anything!`);
-      </script>
-    </div>
-
-    <div class="card muted small" style="margin-top:14px">
-      <strong>Deployment checklist</strong>
-      <ol>
-        <li>Create a new Vercel project (link Git or deploy via Vercel dashboard).</li>
-        <li>Add the serverless file shown above (as <code>/api/openai.js</code> or in Next.js <code>pages/api/openai.js</code>).</li>
-        <li>In Vercel dashboard → Project Settings → Environment Variables, add <code>OPENAI_API_KEY</code> = <em>your OpenAI key</em>. (Do not put it in the HTML.)</li>
-        <li>Deploy — the front-end will call <code>/api/openai</code> and ChatMe will work immediately.</li>
-      </ol>
-      <div style="margin-top:8px">If you want, I can also generate a ready GitHub repo layout (files & folders) you can paste directly — say "generate GitHub repo" and I'll make it.</div>
-    </div>
-  </div>
 </body>
 </html>
